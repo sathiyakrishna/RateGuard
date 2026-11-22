@@ -53,7 +53,7 @@ export async function loadLibrary(): Promise<Library> {
   return { storage, contracts: [SAMPLE_CONTRACT, ...saved.filter((c) => c.id !== SAMPLE_CONTRACT.id)] };
 }
 
-/** Extracts the contract once (server side, OpenAI) and saves it. Returns the saved contract. */
+/** Extracts the contract once (server side, Claude) and saves it. Returns the saved contract. */
 export async function addContract(name: string, text: string, vendor?: string): Promise<{ contract: SavedContract; needVendor?: false }> {
   const res = await fetch('/api/contracts', {
     method: 'POST',

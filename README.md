@@ -8,8 +8,8 @@ Vendors often bill above the rates agreed in the contract: a rate that crept up,
 
 ## How it works
 
-1. **Contracts** (nav link, `/contracts`): upload a vendor contract once (PDF or text). OpenAI extracts the vendor name and the rate card (item, unit, agreed rate, currency, valid from/to, clause reference), and it is saved. Saved in Supabase when configured (table `rateguard_contracts`, migration `010`), otherwise in the browser's localStorage. A sample contract (Apex Facility Services) is always present.
-2. **Check an invoice** (home page, no login): drop an invoice, PDF or text. OpenAI extracts the vendor, invoice number, date and lines (item, quantity, billed rate, amount). The vendor is matched to a saved contract by name (company suffixes and punctuation ignored). The model only extracts. All checking is plain code.
+1. **Contracts** (nav link, `/contracts`): upload a vendor contract once (PDF or text). Claude (`claude-sonnet-5-5`) extracts the vendor name and the rate card (item, unit, agreed rate, currency, valid from/to, clause reference), and it is saved. Saved in Supabase when configured (table `rateguard_contracts`, migration `010`), otherwise in the browser's localStorage. A sample contract (Apex Facility Services) is always present.
+2. **Check an invoice** (home page, no login): drop an invoice, PDF or text. Claude extracts the vendor, invoice number, date and lines (item, quantity, billed rate, amount). The vendor is matched to a saved contract by name (company suffixes and punctuation ignored). The model only extracts. All checking is plain code.
 3. Each invoice line is fuzzy-matched to a rate card item (token overlap with typo tolerance, threshold 0.6). If an item has several rates for different periods, the one valid on the invoice date is used. Each line gets one status:
    - **Rate drift**: billed rate is higher than the agreed rate.
    - **Not in contract**: no rate card item matches. The full line amount is counted as disputable.
@@ -26,18 +26,20 @@ Run it locally:
 
 ```bash
 npm install
-cp .env.example .env.local   # set OPENAI_API_KEY (Supabase values are optional for RateGuard)
+cp .env.example .env.local   # set ANTHROPIC_API_KEY. Supabase values are optional: leave them blank and everything still works
 npm run dev                  # http://localhost:3000
 npm test
 ```
 
+On Replit: add `ANTHROPIC_API_KEY` as a secret, build once with `npm install && npm run build`, and set the run command to `npm start` (it serves on `0.0.0.0:3000`). No Supabase secrets are needed.
+
 Sample files are in `public/samples/` (`contract.txt`, `invoice-clean.txt`, `invoice-drift.txt`, `invoice-duplicate.txt`). Open `/?sample=drift` (or `clean`, `duplicate`) to run a sample on load.
 
-Main code: `lib/rateguard.ts` (matching, checks, dispute email), `lib/rateguard-ai.ts` (OpenAI extraction), `lib/contract-store.ts` (contracts library), `app/api/check/route.ts` and `app/api/contracts/route.ts` (APIs), `components/RateChecker.tsx` and `components/ContractsManager.tsx` (the pages).
+Main code: `lib/rateguard.ts` (matching, checks, dispute email), `lib/rateguard-ai.ts` (Claude extraction), `lib/contract-store.ts` (contracts library), `app/api/check/route.ts` and `app/api/contracts/route.ts` (APIs), `components/RateChecker.tsx` and `components/ContractsManager.tsx` (the pages).
 
 ## Built on
 
-The [InvoiceGuard](https://github.com/sathiyakrishna/Rateguard) template: a Next.js 14 + Supabase app that finds duplicate invoices in an SAP payment-run register. RateGuard reuses its stack, styling, PDF.js setup, OpenAI call pattern and Supabase admin client. The InvoiceGuard login-based pages (`/queue`, `/upload`, `/dashboard`, `/settings`) are still in the repo but are not part of the RateGuard flow.
+The [InvoiceGuard](https://github.com/sathiyakrishna/Rateguard) template: a Next.js 14 + Supabase app that finds duplicate invoices in an SAP payment-run register. RateGuard reuses its stack, styling, PDF.js setup and Supabase admin client. The InvoiceGuard login-based pages (`/queue`, `/upload`, `/dashboard`, `/settings`) are still in the repo but are not part of the RateGuard flow.
 
 ## Built today
 
@@ -54,4 +56,4 @@ The [InvoiceGuard](https://github.com/sathiyakrishna/Rateguard) template: a Next
 
 ## Tools used
 
-Next.js 14, React 18, TypeScript, Tailwind CSS, OpenAI Chat Completions API, Zod, PDF.js (`pdfjs-dist`), Supabase (optional), Vitest, Claude Code.
+Next.js 14, React 18, TypeScript, Tailwind CSS, Claude API by Anthropic (`@anthropic-ai/sdk`, model `claude-sonnet-5-5`), Zod, PDF.js (`pdfjs-dist`), Supabase (optional), Vitest, Claude Code.

@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   if (limited(req, 10)) return NextResponse.json({ error: 'Too many uploads. Please wait a few minutes and try again.' }, { status: 429 });
   const parsed = PostBody.safeParse(await req.json().catch(() => null));
   if (!parsed.success || !validOwner(parsed.data.owner)) return NextResponse.json({ error: 'Send the contract as text (up to 60,000 characters).' }, { status: 400 });
-  if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: 'The server has no OpenAI key configured.' }, { status: 503 });
+  if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ error: 'The server has no Anthropic API key configured.' }, { status: 503 });
   const { owner, name, text, vendor: vendorOverride } = parsed.data;
 
   let out;

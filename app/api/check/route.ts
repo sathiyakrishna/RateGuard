@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Send one invoice as text (up to 60,000 characters).' }, { status: 400 });
   const { invoice: file, contracts, owner, sample, history, seed } = parsed.data;
-  if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: 'The server has no OpenAI key configured.' }, { status: 503 });
+  if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ error: 'The server has no Anthropic API key configured.' }, { status: 503 });
 
   let inv: Invoice;
   let seeded: Invoice[] = [];

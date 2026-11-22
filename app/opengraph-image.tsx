@@ -3,6 +3,8 @@ import { ImageResponse } from 'next/og';
 export const alt = 'RateGuard – Catch vendor overbilling before you pay';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
+// Rendered on request, not at build: prerendering it at build time fails on Windows (@vercel/og "Invalid URL").
+export const dynamic = 'force-dynamic';
 
 export default function OG() {
   const rows = [
