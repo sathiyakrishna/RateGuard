@@ -1,0 +1,113 @@
+name: AI evals
+
+# Calls OpenAI (and later TypeSafe Jev), so it costs a little: nightly, when an AI file changes, or by hand.
+on:
+  schedule:
+    - cron: '30 21 * * *' # 03:00 IST
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - lib/ai.ts
+      - lib/ai-prompts.ts
+      - app/api/explain/**
+      - evals/**
+      - .github/workflows/ai-evals.yml
+  pull_request:
+    paths:
+      - lib/ai.ts
+      - lib/ai-prompts.ts
+      - app/api/explain/**
+      - evals/**
+      - .github/workflows/ai-evals.yml
+
+concurrency:
+  group: ai-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vendors:
+    # Secrets are not available to pull requests from forks.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PROMPTFOO_DISABLE_TELEMETRY: '1'
+      PROMPTFOO_DISABLE_UPDATE: '1'
+      # Promptfoo exits 100 when a test fails or errors, which would skip the report that prints why. The report sets the exit code.
+      PROMPTFOO_FAILED_TEST_EXIT_CODE: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Fails when false matches exceed 1 in 50 pairs; accuracy is printed alongside.
+      - run: npm run eval:vendors
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vendor-eval
+          path: evals/vendors/results.json
+          if-no-files-found: ignore
+
+  explain-gate:
+    # Blocking. Judges the 50 frozen explanations (evals/explain/explanations.json) with code checks plus TypeSafe Jev. No OpenAI call, so the text under test never changes.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Skip when the Jev key is not set
+        if: env.TYPESAFE_API_KEY == ''
+        run: echo "::warning::TYPESAFE_API_KEY is not set, so the explanation gate was skipped."
+      # Fails when fewer than EVAL_MIN_EXPLAIN_PASS of the real explanations pass or Jev rejects fewer than EVAL_MIN_FLAW_CATCH of the flawed ones. Jev answers with confidence below 0.2 are reported and not counted.
+      - name: Explanation gate
+        if: env.TYPESAFE_API_KEY != ''
+        run: npm run eval:explain:gate
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: explain-gate
+          path: evals/explain/judgements.json
+          if-no-files-found: ignore
+
+  explain-monitor:
+    # Never blocks. Nightly or by hand: OpenAI regenerates the 30 real explanations with the production prompt, the 10 flawed ones are added, and the pass rate is reported.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+      PROMPTFOO_DISABLE_TELEMETRY: '1'
+      PROMPTFOO_DISABLE_UPDATE: '1'
+      # Promptfoo exits 100 when a test fails or errors, which would skip the report that prints why.
+      PROMPTFOO_FAILED_TEST_EXIT_CODE: '0'
+      EVAL_EXPLAIN_MONITOR: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Skip when the Jev key is not set
+        if: env.TYPESAFE_API_KEY == ''
+        run: echo "::warning::TYPESAFE_API_KEY is not set, so the explanation monitor was skipped."
+      - name: Explanation monitor
+        if: env.TYPESAFE_API_KEY != ''
+        run: npm run eval:explain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: explain-monitor
+          path: evals/explain/results.json
+          if-no-files-found: ignore

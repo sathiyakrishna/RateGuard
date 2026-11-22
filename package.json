@@ -1,0 +1,54 @@
+{
+  "name": "invoiceguard",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@10.9.9",
+  "engines": {
+    "npm": ">=10.9 <11"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "sample": "node scripts/generate-sample.mjs",
+    "demo-users": "node scripts/create-demo-users.mjs",
+    "tester-user": "node scripts/create-tester.mjs",
+    "tester-reset": "node scripts/reset-tester.mjs",
+    "eval:detection": "tsx evals/detection/run.ts",
+    "eval:vendors": "node --env-file-if-exists=.env.local node_modules/promptfoo/dist/src/entrypoint.js eval -c evals/vendors/promptfooconfig.yaml --no-cache --no-share --no-table --no-progress-bar -o evals/vendors/results.json && tsx evals/vendors/report.ts",
+    "eval:vendors:check": "tsx evals/vendors/check-pairs.ts",
+    "eval:explain": "node --env-file-if-exists=.env.local node_modules/promptfoo/dist/src/entrypoint.js eval -c evals/explain/promptfooconfig.yaml --no-cache --no-share --no-table --no-progress-bar -o evals/explain/results.json && tsx evals/explain/report.ts",
+    "eval:explain:gate": "node --env-file-if-exists=.env.local --import tsx evals/explain/gate.ts",
+    "eval:explain:freeze": "tsx evals/explain/freeze.ts",
+    "eval:judge": "node --env-file-if-exists=.env.local --import tsx evals/explain/judge.ts",
+    "eval:calibrate": "tsx evals/explain/calibrate.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "2.45.4",
+    "exceljs": "4.4.0",
+    "next": "14.2.35",
+    "papaparse": "5.4.1",
+    "pdfjs-dist": "3.11.174",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "read-excel-file": "5.8.6",
+    "server-only": "^0.0.1",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "20.16.11",
+    "@types/papaparse": "5.3.14",
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.1",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.47",
+    "promptfoo": "0.124.1",
+    "tailwindcss": "3.4.14",
+    "tsx": "4.23.15",
+    "typescript": "5.6.3",
+    "vitest": "2.1.3"
+  }
+}
