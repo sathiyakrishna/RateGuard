@@ -66,7 +66,7 @@ export default function Sidebar({ pending, usage, email }: { pending: number; us
   return (
     <nav aria-label="Main" className="sb flex w-full flex-col gap-6 overflow-hidden bg-navy px-4 py-5 text-[#E6EAF2] md:sticky md:top-0 md:h-screen md:shrink-0 md:gap-5 md:py-6">
       <div className="flex items-center justify-between gap-2 rail:flex-col rail:justify-center">
-        <Link href="/queue" className="px-2 rail:flex rail:justify-center rail:px-0" title="InvoiceGuard" aria-label="InvoiceGuard">
+        <Link href="/queue" className="px-2 rail:flex rail:justify-center rail:px-0" title="RateGuard" aria-label="RateGuard">
           <span className="rail:hidden"><Logo /></span>
           <span className="hidden rail:block"><Shield /></span>
         </Link>

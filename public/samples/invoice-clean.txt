@@ -1,0 +1,14 @@
+TAX INVOICE
+Apex Facility Services Pvt Ltd
+Invoice No: INV-2026-1041
+Invoice Date: 05 November 2026
+Bill to: Northwind Industries Pvt Ltd (Contract FSA-2026-017)
+
+Description                          Qty   Rate (Rs)    Amount (Rs)
+Housekeeping staff (per month)        20    18,500.00     370,000.00
+Security guard - night shift          28       950.00      26,600.00
+Diesel generator maintenance visit     2     4,200.00       8,400.00
+Pest control treatment (quarterly)     1    12,000.00      12,000.00
+Fire extinguisher refill (unit)       40       650.00      26,000.00
+
+Total (before GST): Rs 443,000.00

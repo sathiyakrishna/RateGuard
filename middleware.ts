@@ -3,7 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const PROTECTED = ['/queue', '/upload', '/dashboard', '/settings'];
 
+// RateGuard's main flow needs no login: skip auth (and the Supabase call) for the home page,
+// the sample files and the check API.
+const PUBLIC = ['/api/check', '/samples'];
+const isPublic = (path: string) => path === '/' || PUBLIC.some((p) => path === p || path.startsWith(p + '/'));
+
 export async function middleware(request: NextRequest) {
+  if (isPublic(request.nextUrl.pathname)) return NextResponse.next({ request });
   let response = NextResponse.next({ request });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {

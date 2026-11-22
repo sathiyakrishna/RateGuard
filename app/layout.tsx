@@ -5,11 +5,11 @@ const site = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(site),
-  title: { default: 'InvoiceGuard – Catch duplicate invoices before the payment run', template: '%s · InvoiceGuard' },
-  description: 'Upload your payment-run register. InvoiceGuard flags the duplicate invoices SAP’s standard check misses, explains the evidence and lets you block them in minutes.',
+  title: { default: 'RateGuard – Catch vendor overbilling before you pay', template: '%s · RateGuard' },
+  description: 'Upload a contract and an invoice. RateGuard checks every line against the contract rate card and shows what you can recover before you pay.',
   openGraph: {
-    title: 'InvoiceGuard – Catch duplicate invoices before the payment run',
-    description: 'Flags the duplicates SAP’s standard check misses: reference format changes, cross company code postings and alternate vendor accounts.',
+    title: 'RateGuard – Catch vendor overbilling before you pay',
+    description: 'Rate drift, items not in the contract and expired rates, caught line by line with the clause cited.',
     type: 'website'
   }
 };

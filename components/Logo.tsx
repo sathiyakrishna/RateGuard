@@ -11,7 +11,7 @@ export function Logo() {
   return (
     <span className="flex items-center gap-2.5">
       <Shield />
-      <span className="text-[19px] font-bold tracking-tight text-white">InvoiceGuard</span>
+      <span className="text-[19px] font-bold tracking-tight text-white">RateGuard</span>
     </span>
   );
 }

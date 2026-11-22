@@ -15,7 +15,7 @@ const PREVIEW = [
 export default function LoginPage({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <div className="flex min-h-screen flex-wrap">
-      <section aria-label="About InvoiceGuard" className="flex flex-[1_1_520px] flex-col gap-10 bg-navy px-8 py-10 text-[#E6EAF2] sm:px-14 sm:py-12">
+      <section aria-label="About RateGuard" className="flex flex-[1_1_520px] flex-col gap-10 bg-navy px-8 py-10 text-[#E6EAF2] sm:px-14 sm:py-12">
         <Link href="/" className="self-start"><Logo /></Link>
         <div className="mt-auto flex max-w-xl flex-col gap-4">
           <h1 className="text-[40px] font-extrabold leading-[1.05] tracking-[-1.5px] text-white sm:text-[52px]">Stop duplicate payments before the payment run.</h1>
