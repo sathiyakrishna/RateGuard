@@ -3,8 +3,8 @@ export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center">
       <h1>Page not found</h1>
-      <p className="text-ink-500">This page doesn’t exist, or the pair belongs to a different account.</p>
-      <Link href="/queue" className="btn-primary mt-2">Go to the risk queue</Link>
+      <p className="text-ink-500">This page doesn’t exist.</p>
+      <Link href="/" className="btn-primary mt-2">Back to RateGuard</Link>
     </main>
   );
 }

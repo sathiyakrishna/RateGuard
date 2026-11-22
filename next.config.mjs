@@ -7,6 +7,14 @@ const nextConfig = {
     config.resolve.alias.canvas = false; // pdf.js requires 'canvas' only under Node, to render; we only read text in the browser
     return config;
   },
+  // The old InvoiceGuard pages are kept in the repo but no longer part of RateGuard: send them home.
+  // Config redirects run before middleware, so no sign-in check is reached.
+  async redirects() {
+    return ['/queue', '/upload', '/dashboard', '/settings', '/login'].flatMap((p) => [
+      { source: p, destination: '/', permanent: false },
+      { source: `${p}/:path*`, destination: '/', permanent: false }
+    ]);
+  },
   async headers() {
     return [{
       source: '/(.*)',
