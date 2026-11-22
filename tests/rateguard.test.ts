@@ -54,3 +54,26 @@ describe('checkInvoice and duplicates', () => {
     expect(duplicateKey({ ...inv, total: 443001 })).not.toBe(duplicateKey(inv));
   });
 });
+
+import { matchContract } from '@/lib/rateguard';
+import { SAMPLE_CONTRACT } from '@/lib/sample-contract';
+
+describe('saved contracts and the sample contract', () => {
+  const contracts = [SAMPLE_CONTRACT, { ...SAMPLE_CONTRACT, id: 'b', vendor: 'Apex Facility Solutions Ltd' }];
+  it('matches the invoice vendor to a saved contract, ignoring suffixes and punctuation', () => {
+    expect(matchContract('Apex Facility Services Pvt. Ltd.', contracts)?.id).toBe('sample');
+    expect(matchContract('APEX FACILITY SERVICES PRIVATE LIMITED', contracts)?.id).toBe('sample');
+    expect(matchContract('Globex Logistics', contracts)).toBeNull();
+    expect(matchContract('', contracts)).toBeNull();
+  });
+  it('checks the sample drift invoice to ₹32,000 across 2 lines, and the clean one to ₹0', () => {
+    const drift: Invoice = { vendor: 'Apex Facility Services Pvt Ltd', invoiceNumber: 'INV-2026-1058', date: '2026-11-20', total: 464900, lines: [
+      line('Housekeeping staff (per month)', 20, 19800), line('Security guard - night shift', 30, 1150), line('Diesel generator maintenance visit', 2, 4200), line('Fire extinguisher refill (unit)', 40, 650)] };
+    const r = checkInvoice(drift, SAMPLE_CONTRACT.items);
+    expect(r.counts.rate_drift).toBe(2);
+    expect(r.recoverable).toBe(32000);
+    const clean: Invoice = { ...drift, invoiceNumber: 'INV-2026-1041', date: '2026-11-05', lines: [
+      line('Housekeeping staff (per month)', 20, 18500), line('Security guard - night shift', 28, 950), line('Diesel generator maintenance visit', 2, 4200), line('Pest control treatment (quarterly)', 1, 12000), line('Fire extinguisher refill (unit)', 40, 650)] };
+    expect(checkInvoice(clean, SAMPLE_CONTRACT.items).recoverable).toBe(0);
+  });
+});

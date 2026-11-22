@@ -75,14 +75,16 @@ function levenshtein(a: string, b: string): number {
 
 const tokenMatch = (a: string, b: string) => a === b || (Math.min(a.length, b.length) >= 4 && 1 - levenshtein(a, b) / Math.max(a.length, b.length) >= 0.8);
 
-/** 0..1 similarity between two item descriptions. */
-export function similarity(a: string, b: string): number {
-  const ta = tokens(a);
-  const tb = tokens(b);
+function overlap(ta: string[], tb: string[]): number {
   if (!ta.length || !tb.length) return 0;
   const ma = ta.filter((x) => tb.some((y) => tokenMatch(x, y))).length;
   const mb = tb.filter((y) => ta.some((x) => tokenMatch(x, y))).length;
   return (ma / ta.length + mb / tb.length) / 2;
+}
+
+/** 0..1 similarity between two item descriptions. */
+export function similarity(a: string, b: string): number {
+  return overlap(tokens(a), tokens(b));
 }
 
 // ---------- rate checks ----------
@@ -145,13 +147,29 @@ export function checkInvoice(invoice: Invoice, rateCard: ContractItem[]): Invoic
 // ---------- duplicate check (secondary): vendor + invoice number + amount ----------
 
 const VENDOR_NOISE = new Set(['pvt', 'private', 'ltd', 'limited', 'llp', 'inc', 'co', 'company', 'corp', 'the']);
+const vendorTokens = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter((t) => t && !VENDOR_NOISE.has(t));
+
+export const VENDOR_THRESHOLD = 0.75;
+
+/** The saved contract whose vendor best matches the invoice vendor, or null. Company suffixes and punctuation are ignored. */
+export function matchContract<T extends { vendor: string }>(vendor: string, contracts: T[]): T | null {
+  const tv = vendorTokens(vendor);
+  if (!tv.length) return null;
+  let best: T | null = null;
+  let bestScore = 0;
+  for (const c of contracts) {
+    const s = overlap(tv, vendorTokens(c.vendor));
+    if (s > bestScore) { best = c; bestScore = s; }
+  }
+  return bestScore >= VENDOR_THRESHOLD ? best : null;
+}
 
 export function invoiceAmount(inv: Invoice): number {
   return round2(inv.total != null && Number.isFinite(inv.total) ? inv.total : inv.lines.reduce((s, l) => s + (Number.isFinite(l.amount) ? l.amount : l.quantity * l.rate), 0));
 }
 
 export function duplicateKey(inv: Invoice): string {
-  const vendor = inv.vendor.toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter((t) => t && !VENDOR_NOISE.has(t)).join(' ');
+  const vendor = vendorTokens(inv.vendor).join(' ');
   const number = inv.invoiceNumber.toLowerCase().replace(/[^a-z0-9]/g, '');
   return `${vendor}|${number}|${invoiceAmount(inv).toFixed(2)}`;
 }

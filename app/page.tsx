@@ -1,11 +1,10 @@
-import Link from 'next/link';
-import { Logo } from '@/components/Logo';
+import SiteHeader from '@/components/SiteHeader';
 import RateChecker from '@/components/RateChecker';
 
 const STEPS = [
-  ['Upload the contract and the invoice', 'PDF or plain text. RateGuard reads the contract’s rate card: item, unit, agreed rate, currency, validity dates and the clause that sets each rate.'],
-  ['Every line is matched to a contract rate', 'Invoice descriptions rarely match the contract word for word, so lines are fuzzy-matched to the closest rate card item and checked against the rate valid on the invoice date.'],
-  ['See what to recover before you pay', 'Rate drift, items not in the contract and expired rates are totalled, with the clause cited for each. A possible duplicate (vendor, invoice number, amount) is flagged too.'],
+  ['Save each contract once', 'Upload a vendor contract on the Contracts page. RateGuard reads the vendor and the rate card (item, unit, agreed rate, currency, validity dates, clause) and keeps them. A sample contract is always there.'],
+  ['Drop an invoice', 'PDF or text. RateGuard reads it, finds the saved contract for that vendor and fuzzy-matches every line to a contract rate valid on the invoice date.'],
+  ['Get a clear verdict', '“Correct, OK to pay”, “Hold, ₹X overbilled” with the clause cited for each line, or “Possible duplicate” (same vendor, invoice number and amount).'],
   ['Raise the dispute in one click', 'Get a ready-to-send email to the vendor that cites every mismatch and clause.']
 ];
 
@@ -21,21 +20,13 @@ export default function Landing() {
   return (
     <div className="overflow-x-clip bg-white text-ink">
       <div className="bg-gradient-to-b from-[#EEF3FF] to-white">
-        <header className="px-4 pt-4 sm:px-6 sm:pt-6">
-          <div className="mx-auto flex max-w-[1240px] items-center gap-4 rounded-2xl bg-[#0B1F4D] px-5 py-3 shadow-[0_12px_28px_rgba(11,31,77,0.30)] sm:px-7">
-            <Link href="/" aria-label="RateGuard home"><Logo /></Link>
-            <nav aria-label="Page" className="ml-auto flex gap-5 text-[17px] font-bold sm:gap-7">
-              <a href="#check" className="text-white hover:underline">Check an invoice</a>
-              <a href="#how" className="hidden text-white hover:underline sm:inline">How it works</a>
-            </nav>
-          </div>
-        </header>
+        <SiteHeader />
 
         <section className="mx-auto max-w-[1240px] px-6 pb-10 pt-12 sm:px-8 sm:pt-16">
           <p className="text-[18px] font-bold uppercase tracking-wide text-[#2563EB]">Contract rate compliance for accounts payable</p>
           <h1 className="mt-4 max-w-4xl text-[44px] font-extrabold leading-[1.02] tracking-[-2px] text-[#0B1F4D] sm:text-[60px] lg:text-[72px]">Catch vendor overbilling before you pay.</h1>
           <p className="mt-6 max-w-2xl text-[17px] leading-[1.6] text-ink-700 sm:text-[20px]">
-            Vendors quietly bill above the rates in the contract, and nobody compares every invoice line to the rate card. Upload a contract and an invoice and RateGuard shows what was overbilled, which clause it breaks and how much you can recover before payment.
+            Vendors quietly bill above the rates in the contract, and nobody compares every invoice line to the rate card. Save a contract once, then drop each invoice. RateGuard says whether it is OK to pay, or what was overbilled, which clause it breaks and how much you can recover before payment.
           </p>
         </section>
 

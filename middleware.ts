@@ -5,7 +5,7 @@ const PROTECTED = ['/queue', '/upload', '/dashboard', '/settings'];
 
 // RateGuard's main flow needs no login: skip auth (and the Supabase call) for the home page,
 // the sample files and the check API.
-const PUBLIC = ['/api/check', '/samples'];
+const PUBLIC = ['/api/check', '/api/contracts', '/contracts', '/samples'];
 const isPublic = (path: string) => path === '/' || PUBLIC.some((p) => path === p || path.startsWith(p + '/'));
 
 export async function middleware(request: NextRequest) {

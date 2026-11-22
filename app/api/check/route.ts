@@ -1,92 +1,101 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { extractInvoice, extractRateCard } from '@/lib/rateguard-ai';
-import { checkInvoice, duplicateKey, invoiceAmount, type ContractItem, type InvoiceResult } from '@/lib/rateguard';
+import { extractInvoice } from '@/lib/rateguard-ai';
+import { checkInvoice, duplicateKey, invoiceAmount, matchContract, type Invoice, type InvoiceResult } from '@/lib/rateguard';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { limited, validOwner } from '@/lib/rate-limit';
 
 export const maxDuration = 60;
 
 const MAX_TEXT = 60_000;
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable();
+const Item = z.object({
+  item: z.string().min(1).max(300),
+  unit: z.string().max(100).nullable(),
+  rate: z.number().finite(),
+  currency: z.string().max(8),
+  validFrom: date,
+  validTo: date,
+  clause: z.string().max(100).nullable()
+});
 const Body = z.object({
-  contractText: z.string().min(20).max(MAX_TEXT),
-  invoices: z.array(z.object({ name: z.string().max(200), text: z.string().min(20).max(MAX_TEXT) })).min(1).max(4),
+  invoice: z.object({ name: z.string().max(200), text: z.string().min(20).max(MAX_TEXT) }),
+  // the saved contracts, sent by the browser (it holds them in localStorage, or loaded them from /api/contracts)
+  contracts: z.array(z.object({ id: z.string().max(80), vendor: z.string().max(300), items: z.array(Item).min(1).max(300) })).max(50),
+  owner: z.string().optional(),
   // sample runs never touch the database, so re-running the demo never reports its own earlier run as a duplicate
   sample: z.boolean().optional(),
   // invoices already checked in this browser session (used when Supabase is not available)
-  history: z.array(z.string().max(400)).max(50).optional()
+  history: z.array(z.object({ key: z.string().max(400), label: z.string().max(200) })).max(50).optional(),
+  // invoices to treat as already seen (the sample "duplicate" needs the clean invoice before it)
+  seed: z.array(z.object({ name: z.string().max(200), text: z.string().min(20).max(MAX_TEXT) })).max(2).optional()
 });
 
-// Best-effort per-IP limit. The endpoint is open (no login) and spends OpenAI credit.
-const hits = new Map<string, number[]>();
-function limited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < 10 * 60_000);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear();
-  return recent.length > 12;
-}
-
-const supabaseConfigured = () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-export type Duplicate = { source: 'this session' | 'database'; key: string } | null;
+export type Duplicate = { source: 'this session' | 'database'; of: string } | null;
 export type CheckResponse = {
-  rateCard: ContractItem[];
-  results: Array<InvoiceResult & { name: string; key: string; amount: number; duplicate: Duplicate }>;
-  recoverable: number;
+  invoice: Invoice;
+  name: string;
+  key: string;
+  amount: number;
+  contract: { id: string; vendor: string; rates: number } | null; // null: no contract on file for this vendor
+  result: InvoiceResult | null;
+  duplicate: Duplicate;
   duplicateStore: 'database' | 'session only';
 };
 
 export async function POST(req: Request) {
-  const ip = (req.headers.get('x-forwarded-for') ?? 'local').split(',')[0].trim();
-  if (limited(ip)) return NextResponse.json({ error: 'Too many checks. Please wait a few minutes and try again.' }, { status: 429 });
-
+  if (limited(req)) return NextResponse.json({ error: 'Too many checks. Please wait a few minutes and try again.' }, { status: 429 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: 'Send a contract and at least one invoice as text (up to 60,000 characters each).' }, { status: 400 });
-  const { contractText, invoices, sample, history } = parsed.data;
+  if (!parsed.success) return NextResponse.json({ error: 'Send one invoice as text (up to 60,000 characters).' }, { status: 400 });
+  const { invoice: file, contracts, owner, sample, history, seed } = parsed.data;
   if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: 'The server has no OpenAI key configured.' }, { status: 503 });
 
-  let rateCard: ContractItem[];
-  let extracted;
+  let inv: Invoice;
+  let seeded: Invoice[] = [];
   try {
-    [rateCard, extracted] = await Promise.all([extractRateCard(contractText), Promise.all(invoices.map((i) => extractInvoice(i.text)))]);
+    [inv, seeded] = await Promise.all([extractInvoice(file.text), Promise.all((seed ?? []).map((s) => extractInvoice(s.text)))]);
   } catch (e) {
     console.error('rateguard extract failed', e instanceof Error ? e.message : e);
-    return NextResponse.json({ error: 'Could not read the documents. Check they are the right files and try again.' }, { status: 502 });
+    return NextResponse.json({ error: 'Could not read the invoice. Check it is the right file and try again.' }, { status: 502 });
   }
-  if (!rateCard.length) return NextResponse.json({ error: 'No rate card was found in the contract.' }, { status: 422 });
-  const empty = extracted.findIndex((x) => !x.lines.length);
-  if (empty >= 0) return NextResponse.json({ error: `No line items were found in "${invoices[empty].name}".` }, { status: 422 });
+  if (!inv.lines.length) return NextResponse.json({ error: `No line items were found in "${file.name}".` }, { status: 422 });
 
-  const db = !sample && supabaseConfigured() ? createAdminClient() : null;
-  let dbUsable = db !== null;
-  const seen = new Set<string>(history ?? []);
-  const results: CheckResponse['results'] = [];
+  const key = duplicateKey(inv);
+  const seen = new Map<string, string>((history ?? []).map((h) => [h.key, h.label]));
+  seeded.forEach((s, i) => seen.set(duplicateKey(s), seed![i].name));
+  let duplicate: Duplicate = seen.has(key) ? { source: 'this session', of: seen.get(key)! } : null;
 
-  for (let i = 0; i < extracted.length; i++) {
-    const inv = extracted[i];
-    const key = duplicateKey(inv);
-    let duplicate: Duplicate = null;
-    if (seen.has(key)) duplicate = { source: 'this session', key };
-    seen.add(key);
+  const saved = matchContract(inv.vendor, contracts);
+  const result = saved ? checkInvoice(inv, saved.items) : null;
 
-    if (db && dbUsable) {
-      try {
-        const { data, error } = await db.from('rateguard_invoices').select('dup_key').eq('dup_key', key).maybeSingle();
-        if (error) throw error;
-        if (data && !duplicate) duplicate = { source: 'database', key };
-        if (!data) {
-          const { error: insErr } = await db.from('rateguard_invoices').insert({ dup_key: key, vendor: inv.vendor, invoice_number: inv.invoiceNumber, amount: invoiceAmount(inv) });
-          if (insErr) throw insErr;
-        }
-      } catch {
-        dbUsable = false; // table missing or Supabase unreachable: carry on with the in-page check
+  // database duplicate memory: only for real runs with a contract on file (nothing was checked otherwise)
+  let store: CheckResponse['duplicateStore'] = 'session only';
+  if (!sample && saved && validOwner(owner) && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const db = createAdminClient();
+      const dupKey = `${owner}|${key}`;
+      const { data, error } = await db.from('rateguard_invoices').select('dup_key').eq('dup_key', dupKey).maybeSingle();
+      if (error) throw error;
+      if (data && !duplicate) duplicate = { source: 'database', of: 'an invoice checked earlier' };
+      if (!data) {
+        const { error: insErr } = await db.from('rateguard_invoices').insert({ dup_key: dupKey, vendor: inv.vendor, invoice_number: inv.invoiceNumber, amount: invoiceAmount(inv) });
+        if (insErr) throw insErr;
       }
+      store = 'database';
+    } catch {
+      /* table missing or Supabase unreachable: the in-page check still applies */
     }
-    results.push({ ...checkInvoice(inv, rateCard), name: invoices[i].name, key, amount: invoiceAmount(inv), duplicate });
   }
 
-  const recoverable = Math.round(results.reduce((s, r) => s + r.recoverable, 0) * 100) / 100;
-  const body: CheckResponse = { rateCard, results, recoverable, duplicateStore: db && dbUsable ? 'database' : 'session only' };
+  const body: CheckResponse = {
+    invoice: inv,
+    name: file.name,
+    key,
+    amount: invoiceAmount(inv),
+    contract: saved ? { id: saved.id, vendor: saved.vendor, rates: saved.items.length } : null,
+    result,
+    duplicate,
+    duplicateStore: store
+  };
   return NextResponse.json(body);
 }
