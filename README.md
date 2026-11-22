@@ -37,10 +37,6 @@ Sample files are in `public/samples/` (`contract.txt`, `invoice-clean.txt`, `inv
 
 Main code: `lib/rateguard.ts` (matching, checks, dispute email), `lib/rateguard-ai.ts` (Claude extraction), `lib/contract-store.ts` (contracts library), `app/api/check/route.ts` and `app/api/contracts/route.ts` (APIs), `components/RateChecker.tsx` and `components/ContractsManager.tsx` (the pages).
 
-## Built on
-
-The [InvoiceGuard](https://github.com/sathiyakrishna/Rateguard) template: a Next.js 14 + Supabase app that finds duplicate invoices in an SAP payment-run register. RateGuard reuses its stack, styling, PDF.js setup and Supabase admin client. The InvoiceGuard login-based pages (`/queue`, `/upload`, `/dashboard`, `/settings`) are still in the repo but are not part of the RateGuard flow.
-
 ## Built today
 
 22 Nov, 1 PM to 5 PM.
@@ -57,3 +53,5 @@ The [InvoiceGuard](https://github.com/sathiyakrishna/Rateguard) template: a Next
 ## Tools used
 
 Next.js 14, React 18, TypeScript, Tailwind CSS, Claude API by Anthropic (`@anthropic-ai/sdk`, model `claude-sonnet-5-5`), Zod, PDF.js (`pdfjs-dist`), Supabase (optional), Vitest, Claude Code.
+
+Starting codebase: my earlier InvoiceGuard project (duplicate invoice detection). Contract rate-drift checking, saved contracts, verdict flow and Claude integration built on 22 Nov.

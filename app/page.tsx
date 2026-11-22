@@ -72,7 +72,7 @@ export default function Landing() {
       </section>
 
       <footer className="mx-auto max-w-[1240px] px-6 py-8 text-base text-ink-500 sm:px-8">
-        RateGuard. Catch vendor overbilling before you pay. Built on the InvoiceGuard template.
+        RateGuard. Catch vendor overbilling before you pay.
       </footer>
     </div>
   );
