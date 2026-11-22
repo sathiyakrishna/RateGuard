@@ -1,0 +1,57 @@
+/* RateGuard visuals. Base rules describe the finished state; keyframes describe how an element gets there,
+   so prefers-reduced-motion (which turns animations off in globals.css) shows the finished scene. */
+
+/* rubber-stamp on the result invoice */
+.rg-stamp {
+  transform: rotate(-12deg);
+  opacity: 0.92;
+  animation: rg-stamp 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) 0.25s both;
+}
+@keyframes rg-stamp {
+  from { transform: rotate(-12deg) scale(1.9); opacity: 0; }
+  65% { transform: rotate(-12deg) scale(0.94); opacity: 0.92; }
+  to { transform: rotate(-12deg) scale(1); opacity: 0.92; }
+}
+
+/* flagged line on the result invoice: a soft pulse once, to draw the eye */
+.rg-flash { animation: rg-flash 1.4s ease-out 0.5s 1 both; }
+@keyframes rg-flash {
+  from { box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.45); }
+  to { box-shadow: 0 0 0 14px rgba(180, 83, 9, 0); }
+}
+
+/* paper look: faint ruled lines and a torn lower edge */
+.rg-paper {
+  background-image: linear-gradient(to bottom, rgba(11, 31, 77, 0.035) 1px, transparent 1px);
+  background-size: 100% 28px;
+  background-color: #fff;
+}
+.rg-paper::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 8px;
+  background: linear-gradient(135deg, #fff 50%, transparent 50%) 0 0 / 14px 8px, linear-gradient(225deg, #fff 50%, transparent 50%) 0 0 / 14px 8px;
+  filter: drop-shadow(0 3px 2px rgba(11, 31, 77, 0.08));
+}
+
+/* hero: scan sweep across the line being checked */
+.rg-scan { position: relative; overflow: hidden; }
+.rg-scan::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.22), transparent);
+  animation: rg-scan 0.6s ease-in-out both;
+}
+@keyframes rg-scan {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+/* hero: tick drawing in */
+.rg-tick path { stroke-dasharray: 24; stroke-dashoffset: 0; animation: rg-tick 0.35s ease-out both; }
+@keyframes rg-tick { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }

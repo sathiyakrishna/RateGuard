@@ -7,13 +7,14 @@ import { draftDisputeEmail, STATUS_LABEL, type Status } from '@/lib/rateguard';
 import { SAMPLE_INVOICES } from '@/lib/sample-contract';
 import { getOwner, loadLibrary, type Library } from '@/lib/contract-store';
 import { readDocument } from '@/lib/read-document';
+import InvoicePaper from '@/components/InvoicePaper';
 import type { CheckResponse } from '@/app/api/check/route';
 
 const BTN = 'inline-flex min-h-12 items-center justify-center rounded-lg px-6 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-60';
 
 const BADGE: Record<Status, string> = {
   ok: 'bg-low-bg text-low-fg',
-  rate_drift: 'bg-high-bg text-high-fg',
+  rate_drift: 'bg-med-bg text-med-fg',
   not_in_contract: 'bg-high-bg text-high-fg',
   expired_rate: 'bg-med-bg text-med-fg'
 };
@@ -142,7 +143,7 @@ function Detail({ d }: { d: CheckResponse }) {
           </thead>
           <tbody>
             {r.lines.map((l, i) => (
-              <tr key={i} className={`border-b border-line-soft align-top ${l.status === 'ok' ? '' : 'bg-high-row'}`}>
+              <tr key={i} className={`border-b border-line-soft align-top ${l.status === 'ok' ? '' : l.status === 'not_in_contract' ? 'bg-high-row' : 'bg-[#FFFAEB]'}`}>
                 <th scope="row" className="py-3 pr-3 font-semibold text-ink">
                   {l.item}
                   {l.contractItem && l.contractItem !== l.item && <span className="block text-sm font-normal text-ink-500">matched to “{l.contractItem}”</span>}
@@ -175,6 +176,10 @@ export default function RateChecker() {
 
   useEffect(() => {
     loadLibrary().then(setLib);
+    // the hero's "Try with sample data" button opens the sample picker
+    const open = () => setPickerOpen(true);
+    window.addEventListener('rg-open-sample', open);
+    return () => window.removeEventListener('rg-open-sample', open);
   }, []);
 
   async function run(name: string, text: string, opts: { sample?: boolean; seed?: Array<{ name: string; text: string }> } = {}) {
@@ -302,6 +307,7 @@ export default function RateChecker() {
                 <strong>Possible duplicate.</strong> Same vendor, invoice number and amount ({rupees(data.amount)}) as {data.duplicate.of}. Confirm it was not already paid.
               </p>
             )}
+            <InvoicePaper d={data} ok={verdictOf(data) === 'ok'} />
             <Detail d={data} />
             <p className="text-sm text-ink-500">Duplicate memory: {data.duplicateStore}.</p>
           </div>

@@ -1,5 +1,8 @@
 import SiteHeader from '@/components/SiteHeader';
 import RateChecker from '@/components/RateChecker';
+import HeroAnimation from '@/components/HeroAnimation';
+import SampleCta from '@/components/SampleCta';
+import StepStrip from '@/components/StepStrip';
 
 const STEPS = [
   ['Save each contract once', 'Upload a vendor contract on the Contracts page. RateGuard reads the vendor and the rate card (item, unit, agreed rate, currency, validity dates, clause) and keeps them. A sample contract is always there.'],
@@ -22,13 +25,19 @@ export default function Landing() {
       <div className="bg-gradient-to-b from-[#EEF3FF] to-white">
         <SiteHeader />
 
-        <section className="mx-auto max-w-[1240px] px-6 pb-10 pt-12 sm:px-8 sm:pt-16">
-          <p className="text-[18px] font-bold uppercase tracking-wide text-[#2563EB]">Contract rate compliance for accounts payable</p>
-          <h1 className="mt-4 max-w-4xl text-[44px] font-extrabold leading-[1.02] tracking-[-2px] text-[#0B1F4D] sm:text-[60px] lg:text-[72px]">Catch vendor overbilling before you pay.</h1>
-          <p className="mt-6 max-w-2xl text-[17px] leading-[1.6] text-ink-700 sm:text-[20px]">
-            Vendors quietly bill above the rates in the contract, and nobody compares every invoice line to the rate card. Save a contract once, then drop each invoice. RateGuard says whether it is OK to pay, or what was overbilled, which clause it breaks and how much you can recover before payment.
-          </p>
+        <section className="mx-auto grid max-w-[1240px] items-center gap-10 px-6 pb-10 pt-8 sm:px-8 sm:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <div className="flex flex-col gap-5">
+            <p className="text-[16px] font-bold uppercase tracking-wide text-[#2563EB] sm:text-[18px]">Contract rate compliance for accounts payable</p>
+            <h1 className="text-[40px] font-extrabold leading-[1.02] tracking-[-2px] text-[#0B1F4D] sm:text-[56px]">Catch vendor overbilling before you pay.</h1>
+            <p className="max-w-xl text-[17px] leading-[1.55] text-ink-700 sm:text-[19px]">
+              Save a contract once, then drop each invoice. RateGuard checks every line against the agreed rates and tells you whether it is OK to pay.
+            </p>
+            <SampleCta />
+          </div>
+          <HeroAnimation />
         </section>
+
+        <StepStrip />
 
         <section aria-label="Check an invoice" className="mx-auto max-w-[1240px] px-6 pb-16 sm:px-8">
           <RateChecker />
